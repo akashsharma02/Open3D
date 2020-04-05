@@ -225,19 +225,6 @@ elseif (UNIX)
     set(BUILD_LIBREALSENSE OFF)
 endif ()
 
-# Set OpenMP
-if (WITH_OPENMP)
-    find_package(OpenMP QUIET)
-    if (OPENMP_FOUND)
-        message(STATUS "Using installed OpenMP ${OpenMP_VERSION}")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-    else ()
-        message(STATUS "OpenMP NOT found")
-    endif ()
-  endif ()
-
 # recursively parse and return the entire directory tree.
 # the result is placed in output
 function(Directories root output)
