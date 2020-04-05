@@ -134,7 +134,7 @@ list(REMOVE_DUPLICATES CONFIG_Open3D_INCLUDE_DIRS)
 #           1) Open3D
 #           2) Pre-installed 3rd-party libraries
 #           3) Built-from-source 3rd-party libraries
-list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}")
+# list(APPEND CONFIG_Open3D_LIBRARIES "${CMAKE_PROJECT_NAME}")
 if (BUILD_SHARED_LIBS)
     list(APPEND CONFIG_Open3D_LIBRARIES ${PRE_BUILT_3RDPARTY_LIBRARIES})
 else ()
@@ -163,13 +163,9 @@ if (${BUILD_GLFW})
     message(STATUS "${CONFIG_Open3D_LIBRARIES}")
 endif()
 
-# set Open3D library directories
-list(APPEND CONFIG_Open3D_LIBRARY_DIRS
-    "${CMAKE_INSTALL_PREFIX}/lib"
-    ${3RDPARTY_LIBRARY_DIRS}
-    )
-
 set(CONFIG_Open3D_BINARY_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+set(CONFIG_Open3D_LIBRARY_DIR ${CMAKE_INSTALL_PREFIX}/lib)
 
 include(CMakePackageConfigHelpers)
 
@@ -177,7 +173,7 @@ include(CMakePackageConfigHelpers)
 configure_package_config_file(Open3DConfig.cmake.in
                               "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/Open3DConfig.cmake"
                               INSTALL_DESTINATION ${INSTALL_CMAKE_DIR}
-                              PATH_VARS CONFIG_Open3D_INCLUDE_DIRS CONFIG_Open3D_LIBRARY_DIRS CONFIG_Open3D_BINARY_DIR
+                              PATH_VARS CONFIG_Open3D_INCLUDE_DIRS CONFIG_Open3D_LIBRARY_DIR CONFIG_Open3D_BINARY_DIR
                               NO_SET_AND_CHECK_MACRO
                               NO_CHECK_REQUIRED_COMPONENTS_MACRO)
 

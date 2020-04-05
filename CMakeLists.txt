@@ -85,7 +85,7 @@ option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
-option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           OFF)
+option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON)
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
@@ -266,6 +266,8 @@ include_directories(${3RDPARTY_INSTALL_PREFIX}/include)
 # with the interface library. We still need this for Windows.
 link_directories(${3RDPARTY_INSTALL_PREFIX}/lib)
 
+message(STATUS "${3RDPARTY_LIBRARY_DIRS}")
+message(STATUS "${3RDPARTY_INCLUDE_DIRS}")
 # Handling dependencies
 add_subdirectory(3rdparty)
 link_directories(${3RDPARTY_LIBRARY_DIRS})

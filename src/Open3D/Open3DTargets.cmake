@@ -4,12 +4,12 @@ if (NOT TARGET Open3D::Open3D)
     find_library(Open3D_Lib_Static
                  ${CMAKE_STATIC_LIBRARY_PREFIX}Open3D${CMAKE_STATIC_LIBRARY_SUFFIX}
                  NO_DEFAULT_PATH
-                 PATHS ${Open3D_LIBRARY_DIRS})
+                 PATHS ${Open3D_LIBRARY_DIR})
 
     find_library(Open3D_Lib_Shared
                  ${CMAKE_SHARED_LIBRARY_PREFIX}Open3D${CMAKE_SHARED_LIBRARY_SUFFIX}
                  NO_DEFAULT_PATH
-                 PATHS ${Open3D_LIBRARY_DIRS})
+                 PATHS ${Open3D_LIBRARY_DIR})
 
     # Special case for Windows:
     #   - shared libraries come as .dll + import library (.lib)
@@ -47,23 +47,10 @@ if (NOT TARGET Open3D::Open3D)
         message(SEND_ERROR "Open3D library files not found, target Open3D::Open3D not created")
         return()
     else()
-        # Remove Open3D itself from the list of libraries
-        set(Open3D_OTHER_LIBRARIES ${Open3D_LIBRARIES})
-        # disabled, trying something
-        # list(REMOVE_ITEM Open3D_OTHER_LIBRARIES Open3D)
-
         set_target_properties(Open3D::Open3D PROPERTIES
             IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
             INTERFACE_INCLUDE_DIRECTORIES     "${Open3D_INCLUDE_DIRS}"
-            INTERFACE_LINK_DIRECTORIES        "${Open3D_LIBRARY_DIRS}" # CMake 3.13+
-            INTERFACE_LINK_LIBRARIES          "${Open3D_OTHER_LIBRARIES}"
+            INTERFACE_LINK_LIBRARIES          "${Open3D_LIBRARIES}"
             INTERFACE_COMPILE_OPTIONS         "${Open3D_CXX_FLAGS}")
-
-        if(${CMAKE_VERSION} VERSION_LESS "3.13.0")
-            # CMake 3.13 added INTERFACE_LINK_DIRECTORIES
-            link_directories(${Open3D_LIBRARY_DIRS})
-        endif()
-
-        unset(Open3D_OTHER_LIBRARIES)
     endif()
 endif()
