@@ -2,8 +2,9 @@
 # https://cmake.org/cmake/help/v3.1/
 # https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.8.0) # 3.8.0 to enable CUDA native support
 set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CUDA_STANDARD 11)
 
 add_custom_target(build_all_3rd_party_libs
     COMMAND ${CMAKE_COMMAND} -E echo "Custom target build_all_3rd_party_libs reached."
@@ -71,6 +72,7 @@ option(WITH_OPENMP               "Use OpenMP multi-threading"               ON)
 option(ENABLE_HEADLESS_RENDERING "Use OSMesa for headless rendering"        OFF)
 option(BUILD_CPP_EXAMPLES        "Build the Open3D example programs"        ON)
 option(BUILD_UNIT_TESTS          "Build the Open3D unit tests"              OFF)
+option(BUILD_BENCHMARKS          "Build the micro benchmarks"               OFF)
 option(BUILD_EIGEN3              "Use the Eigen3 that comes with Open3D"    ON)
 option(BUILD_FLANN               "Use the flann that comes with Open3D"     ON)
 option(BUILD_GLEW                "Build glew from source"                   OFF)
@@ -85,7 +87,43 @@ option(BUILD_TINYFILEDIALOGS     "Build tinyfiledialogs from source"        ON)
 option(BUILD_QHULL               "Build qhull from source"                  ON)
 option(ENABLE_JUPYTER            "Enable Jupyter support for Open3D"        ON)
 option(STATIC_WINDOWS_RUNTIME    "Use static (MT/MTd) Windows runtime"      OFF)
+option(BUILD_CUDA_MODULE         "Build the CUDA module"                    OFF)
+option(BUILD_TENSORFLOW_OPS      "Build ops for Tensorflow"                 OFF)
 option(GLIBCXX_USE_CXX11_ABI     "Set -D_GLIBCXX_USE_CXX11_ABI=1"           ON)
+
+# Cache variables for specifying the GPU architectures
+set(CUDA_ARCH "Auto" CACHE STRING "Selects GPU architectures for code generation, \
+one of (Auto|BasicPTX|User). Set to 'User' to set a custom list of architectures" )
+set_property( CACHE CUDA_ARCH PROPERTY STRINGS Auto BasicPTX User)
+set(CUDA_ARCH_USER "" CACHE STRING "User defined list of GPU architectures, e.g. 3.5 5.0+PTX Turing" )
+
+# Build CUDA module by default if CUDA is available
+# Compatible with CMake 3.8+
+if (BUILD_CUDA_MODULE)
+    include(CheckLanguage)
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+        find_package( CUDA REQUIRED ) # required for cuda_select_nvcc_arch_flags
+        message(STATUS "Building CUDA enabled")
+        add_definitions(-DBUILD_CUDA_MODULE)
+        enable_language(CUDA)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-extended-lambda")
+        # get gencode flags
+        if( "${CUDA_ARCH}" STREQUAL "User" )
+            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH_USER}")
+        elseif( "${CUDA_ARCH}" STREQUAL "BasicPTX" )
+            # include oldest and most recent PTX and rely on JIT compilation
+            set(CUDA_GENCODES "-gencode arch=compute_30,code=compute_30;-gencode arch=compute_75,code=compute_75")
+        else()
+            cuda_select_nvcc_arch_flags(CUDA_GENCODES "${CUDA_ARCH}")
+        endif()
+        string( REPLACE ";" " " CUDA_GENCODES "${CUDA_GENCODES}")
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${CUDA_GENCODES}")
+    else()
+        set(BUILD_CUDA_MODULE OFF)
+        message(STATUS "No CUDA support")
+    endif()
+endif ()
 
 # default built type
 if (NOT CMAKE_BUILD_TYPE)
@@ -98,8 +136,14 @@ endif ()
 # See docs/compilation.rst for details.
 if (GLIBCXX_USE_CXX11_ABI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=1")
+    if (BUILD_CUDA_MODULE)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=1")
+    endif()
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+    if (BUILD_CUDA_MODULE)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+    endif()
 endif()
 
 # if dynamic link is added, use if (WIN32) macro
@@ -213,7 +257,6 @@ elseif (UNIX)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
     add_compile_options(-Wno-deprecated-declarations)
-    add_compile_options(-Wno-unused-result)
     # In Release build -O3 will be added automatically by CMake
     # We still enable -O3 at debug build to optimize performance
     if (uppercase_CMAKE_BUILD_TYPE STREQUAL "DEBUG")

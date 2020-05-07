@@ -194,7 +194,7 @@ public:
 
     /// \brief Function to smooth triangle mesh using Laplacian.
     ///
-    /// $v_o = v_i \cdot \lambda (sum_{n \in N} w_n v_n - v_i)$,
+    /// $v_o = v_i \cdot \lambda (\sum_{n \in N} w_n v_n - v_i)$,
     /// with $v_i$ being the input value, $v_o$ the output value, $N$ is the
     /// set of adjacent neighbours, $w_n$ is the weighting of the neighbour
     /// based on the inverse distance (closer neighbours have higher weight),
@@ -267,7 +267,7 @@ public:
     bool IsIntersecting(const TriangleMesh &other) const;
 
     /// Function that tests if the given triangle mesh is orientable, i.e.
-    /// the triangles can oriented in such a way that all normals point
+    /// the triangles can be oriented in such a way that all normals point
     /// towards the outside.
     bool IsOrientable() const;
 
@@ -349,15 +349,19 @@ public:
             size_t number_of_points,
             std::vector<double> &triangle_areas,
             double surface_area,
-            bool use_triangle_normal);
+            bool use_triangle_normal,
+            int seed);
 
     /// Function to sample \param number_of_points points uniformly from the
     /// mesh. \param use_triangle_normal Set to true to assign the triangle
     /// normals to the returned points instead of the interpolated vertex
     /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary.
+    /// if necessary. \param seed Sets the seed value used in the random
+    /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsUniformly(
-            size_t number_of_points, bool use_triangle_normal = false);
+            size_t number_of_points,
+            bool use_triangle_normal = false,
+            int seed = -1);
 
     /// Function to sample \param number_of_points points (blue noise).
     /// Based on the method presented in Yuksel, "Sample Elimination for
@@ -368,12 +372,14 @@ public:
     /// \param use_triangle_normal Set to true to assign the triangle
     /// normals to the returned points instead of the interpolated vertex
     /// normals. The triangle normals will be computed and added to the mesh
-    /// if necessary.
+    /// if necessary. \param seed Sets the seed value used in the random
+    /// generator, set to -1 to use a random seed value with each function call.
     std::shared_ptr<PointCloud> SamplePointsPoissonDisk(
             size_t number_of_points,
             double init_factor = 5,
             const std::shared_ptr<PointCloud> pcl_init = nullptr,
-            bool use_triangle_normal = false);
+            bool use_triangle_normal = false,
+            int seed = -1);
 
     /// Function to subdivide triangle mesh using the simple midpoint algorithm.
     /// Each triangle is subdivided into four triangles per iteration and the
@@ -479,17 +485,23 @@ public:
     /// \param constraint_vertex_positions Vertex positions used for the
     /// constraints.
     /// \param max_iter maximum number of iterations to minimize energy
-    /// functional. \return The deformed TriangleMesh
+    /// functional.
+    /// \param energy energy model that should be optimized
+    /// \param smoothed_alpha alpha parameter of the smoothed ARAP model
+    /// \return The deformed TriangleMesh
     std::shared_ptr<TriangleMesh> DeformAsRigidAsPossible(
             const std::vector<int> &constraint_vertex_indices,
             const std::vector<Eigen::Vector3d> &constraint_vertex_positions,
-            size_t max_iter) const;
+            size_t max_iter,
+            DeformAsRigidAsPossibleEnergy energy =
+                    DeformAsRigidAsPossibleEnergy::Spokes,
+            double smoothed_alpha = 0.01) const;
 
     /// \brief Alpha shapes are a generalization of the convex hull. With
     /// decreasing alpha value the shape schrinks and creates cavities.
     /// See Edelsbrunner and Muecke, "Three-Dimensional Alpha Shapes", 1994.
     /// \param pcd PointCloud for what the alpha shape should be computed.
-    /// \param alpha parameter to controll the shape. A very big value will
+    /// \param alpha parameter to control the shape. A very big value will
     /// give a shape close to the convex hull.
     /// \param tetra_mesh If not a nullptr, than uses this to construct the
     /// alpha shape. Otherwise, ComputeDelaunayTetrahedralization is called.
