@@ -49,7 +49,6 @@ void IntegrateAndWriteFragment(int fragment_id, DatasetConfig &config) {
         tsdf_volume.Integrate(rgbd, intrinsic, trans);
     }
 
-    tsdf_volume.GetAllSubvolumes();
     timer.Stop();
     utility::LogInfo("Integration takes {} ms\n", timer.GetDuration());
 
@@ -59,14 +58,23 @@ void IntegrateAndWriteFragment(int fragment_id, DatasetConfig &config) {
     timer.Stop();
     utility::LogInfo("Write TSDF takes {} ms\n", timer.GetDuration());
 
+    tsdf_volume.GetAllSubvolumes();
     cuda::ScalableMeshVolumeCuda mesher(
             cuda::VertexWithNormalAndColor, 16,
             tsdf_volume.active_subvolume_entry_array_.size());
     mesher.MarchingCubes(tsdf_volume);
-    auto aabb = std::make_shared<AxisAlignedBoundingBox>(
-            tsdf_volume.GetMinBound(), tsdf_volume.GetMaxBound());
+
+    auto no_constraint_minmax = tsdf_volume.GetMinMaxBound(0);
+    auto constraint_minmax = tsdf_volume.GetMinMaxBound(400);
+
+    auto no_constraint_aabb = std::make_shared<AxisAlignedBoundingBox>(
+            no_constraint_minmax.first, no_constraint_minmax.second);
+    auto constraint_aabb = std::make_shared<AxisAlignedBoundingBox>(
+            constraint_minmax.first, constraint_minmax.second);
+
     auto mesh = mesher.mesh().Download();
-    visualization::DrawGeometries({mesh, aabb});
+    std::cout << "vertex count = " << mesh->vertices_.size() << "\n";
+    visualization::DrawGeometries({mesh, constraint_aabb, no_constraint_aabb});
     //
     //    PointCloud pcl;
     //    pcl.points_ = mesh->vertices_;

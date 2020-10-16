@@ -206,6 +206,37 @@ Eigen::Vector3d ScalableTSDFVolumeCuda::GetMaxBound() {
     return Eigen::Vector3d(max_boundw(0), max_boundw(1), max_boundw(2));
 }
 
+std::pair<Eigen::Vector3d, Eigen::Vector3d>
+ScalableTSDFVolumeCuda::GetMinMaxBound(int num_valid_pts_thr) {
+    ResetActiveSubvolumeIndices();
+    GetAllSubvolumes();
+
+    Eigen::Vector3f min_boundf(1e5, 1e5, 1e5), max_boundf(-1e5, -1e5, -1e5);
+
+    int num_active_subvolumes = active_subvolume_entry_array_.size();
+    ArrayCuda<int> valid_pts_count(num_active_subvolumes);
+    ArrayCuda<Vector3f> min_bounds(num_active_subvolumes);
+    ArrayCuda<Vector3f> max_bounds(num_active_subvolumes);
+
+    ScalableTSDFVolumeCudaKernelCaller::GetMinMaxBound(*this, valid_pts_count,
+                                                       min_bounds, max_bounds);
+
+    std::vector<int> valid_pts_count_cpu = valid_pts_count.DownloadAll();
+    std::vector<Vector3f> min_bounds_cpu = min_bounds.DownloadAll();
+    std::vector<Vector3f> max_bounds_cpu = max_bounds.DownloadAll();
+
+    for (int i = 0; i < valid_pts_count_cpu.size(); ++i) {
+        if (valid_pts_count_cpu[i] > num_valid_pts_thr) {
+            for (int j = 0; j < 3; ++j) {
+                min_boundf(j) = std::min(min_boundf(j), min_bounds_cpu[i](j));
+                max_boundf(j) = std::max(max_boundf(j), max_bounds_cpu[i](j));
+            }
+        }
+    }
+
+    return std::make_pair(min_boundf.cast<double>(), max_boundf.cast<double>());
+}
+
 std::pair<std::vector<Vector3i>, std::vector<ScalableTSDFVolumeCpuData>>
 ScalableTSDFVolumeCuda::DownloadVolumes() {
     assert(device_ != nullptr);

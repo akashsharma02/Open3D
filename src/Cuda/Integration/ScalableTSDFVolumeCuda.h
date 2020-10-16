@@ -313,6 +313,9 @@ public:
     Eigen::Vector3d GetMinBound();
     Eigen::Vector3d GetMaxBound();
 
+    std::pair<Eigen::Vector3d, Eigen::Vector3d> GetMinMaxBound(
+            int num_valid_pts_thr = 100);
+
     /** Hash_table based integration is non-trivial,
      *  it requires 3 passes: pre-allocation, get volumes, and integration
      *  NOTE: we cannot merge stage 1 and 2:
@@ -382,6 +385,11 @@ public:
 
     static void GetAllSubvolumes(ScalableTSDFVolumeCuda &volume);
 
+    static void GetMinMaxBound(ScalableTSDFVolumeCuda &volume,
+                               ArrayCuda<int> &valid_pts_count,
+                               ArrayCuda<Vector3f> &min_bounds,
+                               ArrayCuda<Vector3f> &max_bounds);
+
     static void GetVisibleSubvolumesCount(const ScalableTSDFVolumeCuda &volume,
                                           int *total_visible,
                                           int frame_id,
@@ -429,6 +437,12 @@ void GetSubvolumesInFrustumKernel(ScalableTSDFVolumeCudaDevice device,
 
 __GLOBAL__
 void GetAllSubvolumesKernel(ScalableTSDFVolumeCudaDevice device);
+
+__GLOBAL__
+void GetMinMaxBoundKernel(ScalableTSDFVolumeCudaDevice device,
+                          ArrayCudaDevice<int> valid_pts_count,
+                          ArrayCudaDevice<Vector3f> min_bounds,
+                          ArrayCudaDevice<Vector3f> max_bounds);
 
 __GLOBAL__
 void GetVisibleSubvolumesCountKernel(ScalableTSDFVolumeCudaDevice device,

@@ -5,6 +5,7 @@
 #pragma once
 #include <Cuda/Common/Palatte.h>
 #include <math_constants.h>
+
 #include "ScalableTSDFVolumeCudaDevice.cuh"
 
 namespace open3d {
@@ -60,7 +61,8 @@ __global__ void TouchSubvolumesKernel(ScalableTSDFVolumeCudaDevice server,
     if (mask.at(x, y, 0) <= 0) return;
 
     const Vector2i p = Vector2i(x, y);
-    server.TouchSubvolume(p, depth, camera, transform_camera_to_world, frame_id);
+    server.TouchSubvolume(p, depth, camera, transform_camera_to_world,
+                          frame_id);
 }
 
 __host__ void ScalableTSDFVolumeCudaKernelCaller::TouchSubvolumes(
@@ -75,6 +77,7 @@ __host__ void ScalableTSDFVolumeCudaKernelCaller::TouchSubvolumes(
     const dim3 threads(THREAD_2D_UNIT, THREAD_2D_UNIT);
     TouchSubvolumesKernel<<<blocks, threads>>>(
             *volume.device_, *depth.device_, camera, transform_camera_to_world, frame_id, *mask.device_);
+
     CheckCuda(cudaDeviceSynchronize());
     CheckCuda(cudaGetLastError());
 }
@@ -95,7 +98,8 @@ __global__ void IntegrateSubvolumesKernel(
 
 #ifdef CUDA_DEBUG_ENABLE_ASSERTION
         assert(entry_idx < server.active_subvolume_entry_array_.size() &&
-               Xlocal(0) < server.N_ && Xlocal(1) < server.N_ && Xlocal(2) < server.N_);
+               Xlocal(0) < server.N_ && Xlocal(1) < server.N_ &&
+               Xlocal(2) < server.N_);
 #endif
 
         HashEntry<Vector3i> &entry =
@@ -116,9 +120,11 @@ __host__ void ScalableTSDFVolumeCudaKernelCaller::IntegrateSubvolumes(
         TransformCuda &transform_camera_to_world) {
     const dim3 blocks(volume.active_subvolume_entry_array_.size());
     const dim3 threads(volume.N_, volume.N_, volume.N_ / 4);
-    printf("blocks: %d, threads: %d", volume.active_subvolume_entry_array_.size(), volume.N_);
+    printf("blocks: %d, threads: %d",
+           volume.active_subvolume_entry_array_.size(), volume.N_);
     IntegrateSubvolumesKernel<<<blocks, threads>>>(
-            *volume.device_, *rgbd.device_, *mask_image.device_, camera, transform_camera_to_world);
+            *volume.device_, *rgbd.device_, *mask_image.device_, camera,
+            transform_camera_to_world);
     CheckCuda(cudaDeviceSynchronize());
     CheckCuda(cudaGetLastError());
 }
@@ -143,7 +149,9 @@ __global__ void GetSubvolumesInFrustumKernel(
             if (camera.IsPointInFrustum(transform_camera_to_world.Inverse() *
                                         server.voxelf_to_world(X))) {
                 server.ActivateSubvolume(entry);
-                UniformTSDFVolumeCudaDevice* subvolume = hash_table.GetValuePtrByInternalAddr(entry.internal_addr);
+                UniformTSDFVolumeCudaDevice *subvolume =
+                        hash_table.GetValuePtrByInternalAddr(
+                                entry.internal_addr);
                 subvolume->last_visible_index_ = frame_id;
             }
         }
@@ -161,7 +169,8 @@ __global__ void GetSubvolumesInFrustumKernel(
         if (camera.IsPointInFrustum(transform_camera_to_world.Inverse() *
                                     server.voxelf_to_world(X))) {
             server.ActivateSubvolume(entry);
-            UniformTSDFVolumeCudaDevice* subvolume = hash_table.GetValuePtrByInternalAddr(entry.internal_addr);
+            UniformTSDFVolumeCudaDevice *subvolume =
+                    hash_table.GetValuePtrByInternalAddr(entry.internal_addr);
             subvolume->last_visible_index_ = frame_id;
         }
 
@@ -218,44 +227,119 @@ __host__ void ScalableTSDFVolumeCudaKernelCaller::GetAllSubvolumes(
     CheckCuda(cudaGetLastError());
 }
 
-__global__ void GetVisibleSubvolumesCountKernel(ScalableTSDFVolumeCudaDevice server,
-        int* total_visible,
-        int frame_id, int frame_threshold)
-{
+__global__ void GetVisibleSubvolumesCountKernel(
+        ScalableTSDFVolumeCudaDevice server,
+        int *total_visible,
+        int frame_id,
+        int frame_threshold) {
     __shared__ int local_sum[THREAD_1D_UNIT];
     int tid = threadIdx.x;
     local_sum[tid] = 0;
 
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if(idx >= server.active_subvolume_entry_array_.size())
-        return;
-    HashEntry<Vector3i> &entry =
-            server.active_subvolume_entry_array_.at(idx);
-    if(entry.internal_addr < 0)
-        return;
+    if (idx >= server.active_subvolume_entry_array_.size()) return;
+    HashEntry<Vector3i> &entry = server.active_subvolume_entry_array_.at(idx);
+    if (entry.internal_addr < 0) return;
 
-    UniformTSDFVolumeCudaDevice* subvolume = server.hash_table_.GetValuePtrByInternalAddr(entry.internal_addr);
-    int visible = subvolume->last_visible_index_ > (frame_id - frame_threshold) ? 1 : 0;
+    UniformTSDFVolumeCudaDevice *subvolume =
+            server.hash_table_.GetValuePtrByInternalAddr(entry.internal_addr);
+    int visible = subvolume->last_visible_index_ > (frame_id - frame_threshold)
+                          ? 1
+                          : 0;
     {
         local_sum[tid] = visible;
         __syncthreads();
 
         BlockReduceSum<int, THREAD_1D_UNIT>(tid, local_sum);
-        if(tid == 0)
-            atomicAdd(total_visible, local_sum[tid]);
+        if (tid == 0) atomicAdd(total_visible, local_sum[tid]);
         __syncthreads();
     }
 }
 
 __host__ void ScalableTSDFVolumeCudaKernelCaller::GetVisibleSubvolumesCount(
         const ScalableTSDFVolumeCuda &volume,
-        int* total_visible,
+        int *total_visible,
         int frame_id,
         int frame_threshold) {
-
-    const dim3 blocks(DIV_CEILING(volume.active_subvolume_entry_array_.size(),THREAD_1D_UNIT));
+    const dim3 blocks(DIV_CEILING(volume.active_subvolume_entry_array_.size(),
+                                  THREAD_1D_UNIT));
     const dim3 threads(THREAD_1D_UNIT);
-    GetVisibleSubvolumesCountKernel<<<blocks, threads>>>(*volume.device_, total_visible, frame_id, frame_threshold);
+    GetVisibleSubvolumesCountKernel<<<blocks, threads>>>(
+            *volume.device_, total_visible, frame_id, frame_threshold);
+    CheckCuda(cudaDeviceSynchronize());
+    CheckCuda(cudaGetLastError());
+}
+
+__global__ void GetMinMaxBoundKernel(ScalableTSDFVolumeCudaDevice server,
+                                     ArrayCudaDevice<int> num_valid_pts,
+                                     ArrayCudaDevice<Vector3f> min_bounds,
+                                     ArrayCudaDevice<Vector3f> max_bounds) {
+    const size_t entry_idx = blockIdx.x;
+
+    HashEntry<Vector3i> &entry =
+            server.active_subvolume_entry_array_.at(entry_idx);
+
+    UniformTSDFVolumeCudaDevice *subvolume =
+            server.hash_table_.GetValuePtrByInternalAddr(entry.internal_addr);
+
+    if (threadIdx.x == 0 && threadIdx.y == 0 && threadIdx.z == 0) {
+        Vector3f X_min = server.voxelf_local_to_global(Vector3f(0), entry.key);
+        Vector3f X_max =
+                server.voxelf_local_to_global(Vector3f(server.N_), entry.key);
+        min_bounds[entry_idx] = server.voxelf_to_world(X_min);
+        max_bounds[entry_idx] = server.voxelf_to_world(X_max);
+    }
+
+    // 1070 supports up to 1024 threads per block
+    // Each thread processes 4 blocks, so 1024 * 4 = 4096 = 16^3 can be achieved
+    for (int workload = 0; workload < 4; ++workload) {
+        const Vector3i X000 = Vector3i(threadIdx.x, threadIdx.y,
+                                       threadIdx.z + blockDim.z * workload);
+        const Vector3i X001 = Vector3i(threadIdx.x + 1, threadIdx.y,
+                                       threadIdx.z + blockDim.z * workload);
+        const Vector3i X010 = Vector3i(threadIdx.x, threadIdx.y + 1,
+                                       threadIdx.z + blockDim.z * workload);
+        const Vector3i X100 = Vector3i(threadIdx.x, threadIdx.y,
+                                       threadIdx.z + blockDim.z * workload + 1);
+
+        float tsdf000 = subvolume->tsdf(X000);
+        uchar weight000 = subvolume->weight(X000);
+        if (weight000 == 0) continue;
+
+        if (X001(0) < server.N_) {
+            float tsdf_nb = subvolume->tsdf(X001);
+            uchar weight_nb = subvolume->weight(X001);
+            if (weight_nb > 0 && tsdf_nb * tsdf000 < 0) {
+                atomicAdd(&num_valid_pts[entry_idx], 1);
+            }
+        }
+        if (X010(1) < server.N_) {
+            float tsdf_nb = subvolume->tsdf(X010);
+            uchar weight_nb = subvolume->weight(X010);
+            if (weight_nb > 0 && tsdf_nb * tsdf000 < 0) {
+                atomicAdd(&num_valid_pts[entry_idx], 1);
+            }
+        }
+        if (X100(2) < server.N_) {
+            float tsdf_nb = subvolume->tsdf(X100);
+            uchar weight_nb = subvolume->weight(X100);
+            if (weight_nb > 0 && tsdf_nb * tsdf000 < 0) {
+                atomicAdd(&num_valid_pts[entry_idx], 1);
+            }
+        }
+    }
+}
+
+__host__ void ScalableTSDFVolumeCudaKernelCaller::GetMinMaxBound(
+        ScalableTSDFVolumeCuda &volume,
+        ArrayCuda<int> &num_valid_pts,
+        ArrayCuda<Vector3f> &min_bounds,
+        ArrayCuda<Vector3f> &max_bounds) {
+    const dim3 blocks(volume.active_subvolume_entry_array_.size());
+    const dim3 threads(volume.N_, volume.N_, volume.N_ / 4);
+    GetMinMaxBoundKernel<<<blocks, threads>>>(
+            *volume.device_, *num_valid_pts.device_, *min_bounds.device_,
+            *max_bounds.device_);
     CheckCuda(cudaDeviceSynchronize());
     CheckCuda(cudaGetLastError());
 }
