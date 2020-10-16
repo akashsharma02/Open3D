@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
 
     std::string config_path =
             argc > 1 ? argv[1]
-                     : kDefaultDatasetConfigDir + "/bundlefusion/apt0.json";
+                     : kDefaultDatasetConfigDir + "/bundlefusion/copyroom.json";
 
     bool is_success = ReadIJsonConvertible(config_path, config);
     if (!is_success) return 1;

@@ -116,7 +116,6 @@ __host__ void ScalableTSDFVolumeCudaKernelCaller::IntegrateSubvolumes(
         TransformCuda &transform_camera_to_world) {
     const dim3 blocks(volume.active_subvolume_entry_array_.size());
     const dim3 threads(volume.N_, volume.N_, volume.N_ / 4);
-    printf("blocks: %d, threads: %d", volume.active_subvolume_entry_array_.size(), volume.N_);
     IntegrateSubvolumesKernel<<<blocks, threads>>>(
             *volume.device_, *rgbd.device_, *mask_image.device_, camera, transform_camera_to_world);
     CheckCuda(cudaDeviceSynchronize());

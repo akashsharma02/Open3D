@@ -164,7 +164,7 @@ void UniformTSDFVolumeCuda::Integrate(
     ImageCuda<uchar, 1> mask_image;
     if(mask.width_ <= 0 || mask.height_ <= 0 || mask.device_ == nullptr)
     {
-        mask_image.Create(rgbd.depth_.width_, rgbd.depth_.height_, 1);
+        mask_image.Create(rgbd.width_, rgbd.height_, 1);
     }
     else
     {

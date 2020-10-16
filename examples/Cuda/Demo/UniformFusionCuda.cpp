@@ -19,12 +19,12 @@ void IntegrateAndWriteFragment(int fragment_id, DatasetConfig &config) {
                   pose_graph);
 
     int voxel_resolution = 256;
-    float voxel_length = config.tsdf_cubic_size_ / voxel_resolution;
+    float voxel_length = config.voxel_size_;
 
     cuda::PinholeCameraIntrinsicCuda intrinsic(config.intrinsic_);
     cuda::TransformCuda trans = cuda::TransformCuda::Identity();
 
-    float offset = -voxel_length * voxel_resolution / 2;
+    float offset = -(voxel_length * voxel_resolution)/2;
     cuda::TransformCuda extrinsics = cuda::TransformCuda::Identity();
     extrinsics.SetTranslation(cuda::Vector3f(offset, offset, offset));
 
@@ -33,6 +33,7 @@ void IntegrateAndWriteFragment(int fragment_id, DatasetConfig &config) {
 
     cuda::RGBDImageCuda rgbd((float)config.max_depth_,
                              (float)config.depth_factor_);
+
 
     const int begin = fragment_id * config.n_frames_per_fragment_;
     const int end = std::min((fragment_id + 1) * config.n_frames_per_fragment_,
@@ -87,7 +88,7 @@ int main(int argc, char **argv) {
     DatasetConfig config;
     std::string config_path =
             argc > 1 ? argv[1]
-                     : kDefaultDatasetConfigDir + "/stanford/lounge.json";
+                     : kDefaultDatasetConfigDir + "/bundlefusion/copyroom.json";
     bool is_success = io::ReadIJsonConvertible(config_path, config);
     if (!is_success) return 1;
     config.GetFragmentFiles();

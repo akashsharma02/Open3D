@@ -20,8 +20,7 @@ struct Match {
 };
 
 static const std::string kDefaultDatasetConfigDir =
-    "../../../examples/Cuda"
-    "/ReconstructionSystem/config";
+    "../../../examples/Cuda/ReconstructionSystem/config";
 
 class DatasetConfig : public utility::IJsonConvertible {
 public:
@@ -107,6 +106,7 @@ public:
 
     bool GetFragmentFiles() {
         std::string fragment_directory = path_dataset_ + "/fragments_cuda";
+        utility::LogInfo("Framgment directory: {}", fragment_directory);
         if (!utility::filesystem::DirectoryExists(fragment_directory)) {
             utility::LogError("No fragment folder found in directory %s\n",
                        fragment_directory.c_str());

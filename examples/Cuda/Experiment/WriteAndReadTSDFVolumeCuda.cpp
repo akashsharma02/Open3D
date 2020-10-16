@@ -59,14 +59,14 @@ void IntegrateAndWriteFragment(int fragment_id, DatasetConfig &config) {
     timer.Stop();
     utility::LogInfo("Write TSDF takes {} ms\n", timer.GetDuration());
 
-    cuda::ScalableMeshVolumeCuda mesher(
-            cuda::VertexWithNormalAndColor, 16,
-            tsdf_volume.active_subvolume_entry_array_.size());
-    mesher.MarchingCubes(tsdf_volume);
-    auto aabb = std::make_shared<AxisAlignedBoundingBox>(
-            tsdf_volume.GetMinBound(), tsdf_volume.GetMaxBound());
-    auto mesh = mesher.mesh().Download();
-    visualization::DrawGeometries({mesh, aabb});
+    /* cuda::ScalableMeshVolumeCuda mesher( */
+    /*         cuda::VertexWithNormalAndColor, 16, */
+    /*         tsdf_volume.active_subvolume_entry_array_.size(), 50000, 100000); */
+    /* mesher.MarchingCubes(tsdf_volume); */
+    /* auto aabb = std::make_shared<AxisAlignedBoundingBox>( */
+    /*         tsdf_volume.GetMinBound(), tsdf_volume.GetMaxBound()); */
+    /* auto mesh = mesher.mesh().Download(); */
+    /* visualization::DrawGeometries({mesh, aabb}); */
     //
     //    PointCloud pcl;
     //    pcl.points_ = mesh->vertices_;
@@ -104,26 +104,26 @@ void ReadFragment(int fragment_id, DatasetConfig &config) {
             tsdf_volume.GetMinBound(), tsdf_volume.GetMaxBound());
 
     tsdf_volume.GetAllSubvolumes();
-    cuda::ScalableMeshVolumeCuda mesher(
-            cuda::VertexWithNormalAndColor, 16,
-            tsdf_volume.active_subvolume_entry_array_.size());
-    mesher.MarchingCubes(tsdf_volume);
-    auto mesh = mesher.mesh().Download();
-    std::cout << mesh->GetMinBound() << "\n";
-    std::cout << mesh->GetMaxBound() << "\n";
-    visualization::DrawGeometries({mesh, aabb});
+    /* cuda::ScalableMeshVolumeCuda mesher( */
+    /*         cuda::VertexWithNormalAndColor, 16, */
+    /*         tsdf_volume.active_subvolume_entry_array_.size()); */
+    /* mesher.MarchingCubes(tsdf_volume); */
+    /* auto mesh = mesher.mesh().Download(); */
+    /* std::cout << mesh->GetMinBound() << "\n"; */
+    /* std::cout << mesh->GetMaxBound() << "\n"; */
+    /* visualization::DrawGeometries({mesh, aabb}); */
 }
 
 int main(int argc, char **argv) {
     DatasetConfig config;
     std::string config_path =
             argc > 1 ? argv[1]
-                     : kDefaultDatasetConfigDir + "/stanford/lounge.json";
+                     : kDefaultDatasetConfigDir + "/bundlefusion/copyroom.json";
     bool is_success = io::ReadIJsonConvertible(config_path, config);
     if (!is_success) return 1;
     config.GetFragmentFiles();
 
-    for (int i = 1; i < 2; ++i) {  // config.fragment_files_.size(); ++i) {
+    for (int i = 0; i < 2; ++i) {  // config.fragment_files_.size(); ++i) {
         utility::LogInfo("{}\n", i);
         IntegrateAndWriteFragment(i, config);
         ReadFragment(i, config);

@@ -291,7 +291,7 @@ HashTableCuda<Key, Value, Hasher>::DownloadKeyValuePairs() {
         values[i] = memory_heap_values[entry.internal_addr];
     }
 
-    return std::make_pair(std::move(keys), std::move(values));
+    return std::make_pair(keys, values);
 }
 
 template<typename Key, typename Value, typename Hasher>

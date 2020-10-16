@@ -297,6 +297,7 @@ public:
      * non-wrapped allocation stuff here for UniformTSDFVolumeCudaDevice **/
     void Create(int N, int bucket_count, int value_capacity);
     void Release();
+
     void Reset();
     void UpdateDevice();
 

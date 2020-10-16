@@ -237,7 +237,7 @@ ScalableTSDFVolumeCuda::DownloadVolumes() {
                              sizeof(Vector3b) * NNN, cudaMemcpyDeviceToHost));
     }
 
-    return std::make_pair(std::move(keys), std::move(subvolumes));
+    return std::make_pair(keys, subvolumes);
 }
 
 /** We can easily download occupied subvolumes in parallel
