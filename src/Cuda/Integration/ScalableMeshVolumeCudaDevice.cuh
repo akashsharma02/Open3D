@@ -51,15 +51,16 @@ __device__ void ScalableMeshVolumeCudaDevice::AllocateVertex(
                                           Xlocal(1) + shift[corner][1],
                                           Xlocal(2) + shift[corner][2]);
 
+        uint16_t fg = subvolume->fg(Xlocal_corner);
+        uint16_t bg = subvolume->bg(Xlocal_corner);
+        float prob = float(fg) / float(bg);
+        if (prob < 0.5f) return;
+
         uchar weight = subvolume->weight(Xlocal_corner);
         if (weight == 0) return;
 
         float tsdf = subvolume->tsdf(Xlocal_corner);
-        /* uint16_t fg = subvolume->fg(Xlocal_corner); */
-        /* uint16_t bg = subvolume->bg(Xlocal_corner); */
-        /* float prob = float(fg) / float(bg); */
         if (fabsf(tsdf) >= 0.95f) return;
-        /* if (prob < 0.5f) return; */
 
         tmp_table_index |= ((tsdf < 0) ? (1 << corner) : 0);
     }
@@ -117,12 +118,13 @@ __device__ void ScalableMeshVolumeCudaDevice::AllocateVertexOnBoundary(
         uchar weight = neighbor_subvolume->weight(Xlocal_corner_in_neighbor);
         if (weight == 0) return;
 
+        uint16_t fg = neighbor_subvolume->fg(Xlocal_corner_in_neighbor);
+        uint16_t bg = neighbor_subvolume->bg(Xlocal_corner_in_neighbor);
+        float prob = float(fg) / float(bg);
+        if (prob < 0.5f) return;
+
         float tsdf = neighbor_subvolume->tsdf(Xlocal_corner_in_neighbor);
-        /* uint16_t fg = neighbor_subvolume->fg(Xlocal_corner_in_neighbor); */
-        /* uint16_t bg = neighbor_subvolume->bg(Xlocal_corner_in_neighbor); */
-        /* float prob = float(fg) / float(bg); */
         if (fabsf(tsdf) >= 0.95f) return;
-        /* if(prob < 0.5f) return; */
 
         tmp_table_index |= ((tsdf < 0) ? (1 << corner) : 0);
     }

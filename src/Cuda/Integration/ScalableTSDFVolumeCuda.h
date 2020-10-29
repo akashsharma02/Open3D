@@ -244,14 +244,21 @@ public:
     std::vector<float> tsdf_;
     std::vector<uchar> weight_;
     std::vector<Vector3b> color_;
+    std::vector<uint16_t> fg_;
+    std::vector<uint16_t> bg_;
 
     ScalableTSDFVolumeCpuData() = default;
     ScalableTSDFVolumeCpuData(std::vector<float> tsdf_buffer,
                               std::vector<uchar> weight_buffer,
-                              std::vector<Vector3b> color_buffer)
+                              std::vector<Vector3b> color_buffer,
+                              std::vector<uint16_t> fg,
+                              std::vector<uint16_t> bg)
         : tsdf_(std::move(tsdf_buffer)),
           weight_(std::move(weight_buffer)),
-          color_(std::move(color_buffer)){};
+          color_(std::move(color_buffer)),
+          fg_(std::move(fg)),
+          bg_(std::move(bg))
+    {};
 };
 
 class ScalableTSDFVolumeCuda {

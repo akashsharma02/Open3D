@@ -8,12 +8,12 @@
 
 namespace open3d {
 namespace io {
-
-bool WriteScalableTSDFVolumeToBIN(const std::string &filename,
-                                  cuda::ScalableTSDFVolumeCuda &volume,
-                                  bool use_zlib) {
-    auto key_value = volume.DownloadVolumes();
-
+bool WriteScalableTSDFVolumeToBIN(
+        const std::string &filename,
+        cuda::ScalableTSDFVolumeCuda &volume,
+        std::pair<std::vector<cuda::Vector3i>,
+                  std::vector<cuda::ScalableTSDFVolumeCpuData>> key_value,
+        bool use_zlib) {
     auto keys = key_value.first;
     auto values = key_value.second;
     assert(keys.size() == values.size());
@@ -79,6 +79,8 @@ bool WriteScalableTSDFVolumeToBIN(const std::string &filename,
         auto &tsdf = subvolume.tsdf_;
         auto &weight = subvolume.weight_;
         auto &color = subvolume.color_;
+        auto &fg = subvolume.fg_;
+        auto &bg = subvolume.bg_;
 
         if (!use_zlib) {
             if (!Write(tsdf, fid, "TSDF")) {
@@ -88,6 +90,12 @@ bool WriteScalableTSDFVolumeToBIN(const std::string &filename,
                 return false;
             }
             if (!Write(color, fid, "color")) {
+                return false;
+            }
+            if (!Write(color, fid, "fg")) {
+                return false;
+            }
+            if (!Write(color, fid, "bg")) {
                 return false;
             }
         } else {
@@ -100,11 +108,23 @@ bool WriteScalableTSDFVolumeToBIN(const std::string &filename,
             if (!CompressAndWrite(compressed_buf, color, fid, "color")) {
                 return false;
             }
+            if (!CompressAndWrite(compressed_buf, fg, fid, "fg")) {
+                return false;
+            }
+            if (!CompressAndWrite(compressed_buf, bg, fid, "bg")) {
+                return false;
+            }
         }
     }
 
     fclose(fid);
     return true;
+}
+bool WriteScalableTSDFVolumeToBIN(const std::string &filename,
+                                  cuda::ScalableTSDFVolumeCuda &volume,
+                                  bool use_zlib) {
+    auto key_value = volume.DownloadVolumes();
+    WriteScalableTSDFVolumeToBIN(filename, volume, key_value, use_zlib);
 }
 
 cuda::ScalableTSDFVolumeCuda ReadScalableTSDFVolumeFromBIN(
@@ -171,6 +191,8 @@ cuda::ScalableTSDFVolumeCuda ReadScalableTSDFVolumeFromBIN(
     std::vector<float> tsdf_buf(NNN);
     std::vector<uchar> weight_buf(NNN);
     std::vector<cuda::Vector3b> color_buf(NNN);
+    std::vector<uint16_t> fg_buf(NNN);
+    std::vector<uint16_t> bg_buf(NNN);
 
     std::vector<int> failed_key_indices;
     std::vector<cuda::Vector3i> failed_keys;
@@ -208,6 +230,14 @@ cuda::ScalableTSDFVolumeCuda ReadScalableTSDFVolumeFromBIN(
                     throw std::runtime_error(
                             "ScalableTSDFVolume Read from bin error");
                 }
+                if (!Read(color_buf, fid, "fg")) {
+                    throw std::runtime_error(
+                            "ScalableTSDFVolume Read from bin error");
+                }
+                if (!Read(color_buf, fid, "fg")) {
+                    throw std::runtime_error(
+                            "ScalableTSDFVolume Read from bin error");
+                }
             } else {
                 if (!ReadAndUncompress(compressed_buf, tsdf_buf, fid, "TSDF")) {
                     throw std::runtime_error(
@@ -223,10 +253,20 @@ cuda::ScalableTSDFVolumeCuda ReadScalableTSDFVolumeFromBIN(
                     throw std::runtime_error(
                             "ScalableTSDFVolume Read from bin error");
                 }
+                if (!ReadAndUncompress(compressed_buf, fg_buf, fid,
+                                       "uint16_t")) {
+                    throw std::runtime_error(
+                            "ScalableTSDFVolume Read from bin error");
+                }
+                if (!ReadAndUncompress(compressed_buf, bg_buf, fid,
+                                       "uint16_t")) {
+                    throw std::runtime_error(
+                            "ScalableTSDFVolume Read from bin error");
+                }
             }
             batch_keys.emplace_back(keys[i]);
             batch_subvolumes.emplace_back(cuda::ScalableTSDFVolumeCpuData(
-                    tsdf_buf, weight_buf, color_buf));
+                    tsdf_buf, weight_buf, color_buf, fg_buf, bg_buf));
         }
 
         volume.UploadVolumes(batch_keys, batch_subvolumes);

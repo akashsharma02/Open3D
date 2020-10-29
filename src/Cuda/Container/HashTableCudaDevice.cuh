@@ -119,7 +119,7 @@ int HashTableCudaDevice<Key, Value, Hasher>::New(
     }
 
     /** Don't unlock, otherwise the result can be inconsistent **/
-    atomicExch(&lock_array_.at(bucket_idx), UNLOCKED);
+    /* atomicExch(&lock_array_.at(bucket_idx), UNLOCKED); */
     return new_entry.internal_addr;
 }
 

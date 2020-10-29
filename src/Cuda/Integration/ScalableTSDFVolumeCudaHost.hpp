@@ -257,6 +257,8 @@ ScalableTSDFVolumeCuda::DownloadVolumes() {
         subvolume.tsdf_.resize(NNN);
         subvolume.weight_.resize(NNN);
         subvolume.color_.resize(NNN);
+        subvolume.fg_.resize(NNN);
+        subvolume.bg_.resize(NNN);
 
         CheckCuda(cudaMemcpy(subvolume.tsdf_.data(), subvolumes_device[i].tsdf_,
                              sizeof(float) * NNN, cudaMemcpyDeviceToHost));
@@ -266,6 +268,12 @@ ScalableTSDFVolumeCuda::DownloadVolumes() {
         CheckCuda(cudaMemcpy(subvolume.color_.data(),
                              subvolumes_device[i].color_,
                              sizeof(Vector3b) * NNN, cudaMemcpyDeviceToHost));
+        CheckCuda(cudaMemcpy(subvolume.fg_.data(),
+                             subvolumes_device[i].fg_,
+                             sizeof(uint16_t) * NNN, cudaMemcpyDeviceToHost));
+        CheckCuda(cudaMemcpy(subvolume.bg_.data(),
+                             subvolumes_device[i].bg_,
+                             sizeof(uint16_t) * NNN, cudaMemcpyDeviceToHost));
     }
 
     return std::make_pair(keys, subvolumes);
@@ -349,6 +357,12 @@ bool ScalableTSDFVolumeCuda::UploadVolumes(
                              cudaMemcpyHostToDevice));
         CheckCuda(cudaMemcpy(&device_->color_memory_pool_[offset],
                              values[i].color_.data(), sizeof(Vector3b) * NNN,
+                             cudaMemcpyHostToDevice));
+        CheckCuda(cudaMemcpy(&device_->fg_memory_pool_[offset],
+                             values[i].fg_.data(), sizeof(uint16_t) * NNN,
+                             cudaMemcpyHostToDevice));
+        CheckCuda(cudaMemcpy(&device_->bg_memory_pool_[offset],
+                             values[i].bg_.data(), sizeof(uint16_t) * NNN,
                              cudaMemcpyHostToDevice));
     }
     return ret;
@@ -447,7 +461,8 @@ void ScalableTSDFVolumeCuda::Integrate(
     utility::LogDebug("Active subvolumes in volume: {}",
                       active_subvolume_entry_array_.size());
 
-    IntegrateSubvolumes(rgbd, mask_image, camera, transform_camera_to_world);
+    if(active_subvolume_entry_array_.size() > 0)
+        IntegrateSubvolumes(rgbd, mask_image, camera, transform_camera_to_world);
 }
 
 void ScalableTSDFVolumeCuda::RayCasting(

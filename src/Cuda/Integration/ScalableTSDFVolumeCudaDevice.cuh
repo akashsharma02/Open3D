@@ -803,7 +803,7 @@ __device__ bool ScalableTSDFVolumeCudaDevice::RayCasting(
             float prob = float(fg) / float(fg + bg);
             if(fg == 65535 || bg == 65535)
                 return false;
-            if(prob >= 0.5f)
+            if(prob >= 0.4f)
                 return true;
 
             return false;
