@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     float voxel_length = 0.01f;
     cuda::TransformCuda extrinsics = cuda::TransformCuda::Identity();
     cuda::ScalableTSDFVolumeCuda tsdf_volume(
-        8, voxel_length, 3 * voxel_length, extrinsics);
+        8, voxel_length, 3 * voxel_length, 3.0f, extrinsics);
 
     Image depth, color;
     cuda::RGBDImageCuda rgbd(640, 480, 4.0f, 5000.0f);

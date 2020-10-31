@@ -49,6 +49,17 @@ def get_rgbd_file_lists(path_dataset):
     depth_files = get_file_list(path_depth, ".png")
     return color_files, depth_files
 
+def get_tum_files(path_dataset):
+    color_files = []
+    depth_files = []
+    with open(path_dataset + "/files.txt", 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            tokens = line.split()
+            color_files.append(tokens[1])
+            depth_files.append(tokens[3])
+    return color_files, depth_files
+
 
 def make_clean_folder(path_folder):
     if not exists(path_folder):

@@ -755,7 +755,7 @@ __device__ bool ScalableTSDFVolumeCudaDevice::RayCasting(
 
     /** TODO: throw it into parameters **/
     const float t_min = 0.1f / ray_c(2);
-    const float t_max = 3.0f / ray_c(2);
+    const float t_max = max_depth_ / ray_c(2);
 
     const Vector3f camera_origin_v = transform_world_to_volume_ *
                                      (transform_camera_to_world * Vector3f(0));
@@ -829,7 +829,7 @@ __device__ Vector3f ScalableTSDFVolumeCudaDevice::VolumeRendering(
 
     /** TODO: throw it into parameters **/
     const float t_min = 0.1f;
-    const float t_max = 3.0f;
+    const float t_max = max_depth_;
 
     const Vector3f camera_origin_v = transform_world_to_volume_ *
                                      (transform_camera_to_world * Vector3f(0));

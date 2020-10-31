@@ -63,7 +63,7 @@ int Run(DatasetConfig &config) {
     cuda::TransformCuda trans = cuda::TransformCuda::Identity();
     cuda::ScalableTSDFVolumeCuda tsdf_volume(
             16, (float)config.tsdf_cubic_size_ / 512,
-            (float)config.tsdf_truncation_, trans, 40000, 60000);
+            (float)config.tsdf_truncation_, config.max_depth_, trans, 40000, 60000);
 
     bool is_success = config.GetFragmentFiles();
     if (!is_success) {

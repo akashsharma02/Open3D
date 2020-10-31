@@ -66,6 +66,7 @@ public:
     float voxel_length_;
     float inv_voxel_length_;
     float sdf_trunc_;
+    float max_depth_;
     TransformCuda transform_volume_to_world_;
     TransformCuda transform_world_to_volume_;
 
@@ -283,6 +284,7 @@ public:
 
     float voxel_length_;
     float sdf_trunc_;
+    float max_depth_;
     TransformCuda transform_volume_to_world_;
 
 public:
@@ -290,6 +292,7 @@ public:
     ScalableTSDFVolumeCuda(int N,
                            float voxel_length,
                            float sdf_trunc,
+                           float max_depth = 3.0f,
                            const TransformCuda &transform_volume_to_world =
                                    TransformCuda::Identity(),
                            /* 2000 buckets, 2000 + 2000 entries */

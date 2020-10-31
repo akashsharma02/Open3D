@@ -26,11 +26,13 @@ ScalableTSDFVolumeCuda::ScalableTSDFVolumeCuda(
         int N,
         float voxel_length,
         float sdf_trunc,
+        float max_depth,
         const TransformCuda &transform_volume_to_world,
         int bucket_count,
         int value_capacity) {
     voxel_length_ = voxel_length;
     sdf_trunc_ = sdf_trunc;
+    max_depth_ = max_depth;
     transform_volume_to_world_ = transform_volume_to_world;
 
     Create(N, bucket_count, value_capacity);
@@ -48,6 +50,7 @@ ScalableTSDFVolumeCuda::ScalableTSDFVolumeCuda(
 
     voxel_length_ = other.voxel_length_;
     sdf_trunc_ = other.sdf_trunc_;
+    max_depth_ = other.max_depth_;
     transform_volume_to_world_ = other.transform_volume_to_world_;
 }
 
@@ -66,6 +69,7 @@ ScalableTSDFVolumeCuda &ScalableTSDFVolumeCuda::operator=(
 
         voxel_length_ = other.voxel_length_;
         sdf_trunc_ = other.sdf_trunc_;
+        max_depth_ = other.max_depth_;
         transform_volume_to_world_ = other.transform_volume_to_world_;
     }
 
@@ -156,6 +160,7 @@ void ScalableTSDFVolumeCuda::UpdateDevice() {
         device_->voxel_length_ = voxel_length_;
         device_->inv_voxel_length_ = 1.0f / voxel_length_;
         device_->sdf_trunc_ = sdf_trunc_;
+        device_->max_depth_ = max_depth_;
         device_->transform_volume_to_world_ = transform_volume_to_world_;
         device_->transform_world_to_volume_ =
                 transform_volume_to_world_.Inverse();
@@ -409,7 +414,7 @@ int ScalableTSDFVolumeCuda::GetVisibleSubvolumesCount(
     int visible_count;
     CheckCuda(cudaMemcpy(&visible_count, total_visible, sizeof(int),
                          cudaMemcpyDeviceToHost));
-    utility::LogDebug("Visible count: {}", visible_count);
+    utility::LogInfo("Visible count: {}", visible_count);
     return visible_count;
 }
 
@@ -448,7 +453,7 @@ void ScalableTSDFVolumeCuda::Integrate(
     ImageCuda<uchar, 1> mask_image;
     if (r_mask_image.width_ <= 0 || r_mask_image.height_ <= 0 ||
         r_mask_image.device_ == nullptr) {
-        mask_image.Create(rgbd.depth_.width_, rgbd.depth_.height_, 1);
+        mask_image.Create(rgbd.depth_.width_, rgbd.depth_.height_, 255);
     } else {
         mask_image = r_mask_image;
     }
@@ -458,7 +463,7 @@ void ScalableTSDFVolumeCuda::Integrate(
 
     ResetActiveSubvolumeIndices();
     GetSubvolumesInFrustum(camera, transform_camera_to_world, frame_id);
-    utility::LogDebug("Active subvolumes in volume: {}",
+    utility::LogInfo("Active subvolumes in volume: {}",
                       active_subvolume_entry_array_.size());
 
     if(active_subvolume_entry_array_.size() > 0)

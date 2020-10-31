@@ -66,6 +66,7 @@ std::shared_ptr<geometry::Image> CreateImageFromFile(
 }
 
 bool ReadImage(const std::string &filename, geometry::Image &image) {
+    utility::LogInfo("Filename {}", filename);
     std::string filename_ext =
             utility::filesystem::GetFileExtensionInLowerCase(filename);
     if (filename_ext.empty()) {

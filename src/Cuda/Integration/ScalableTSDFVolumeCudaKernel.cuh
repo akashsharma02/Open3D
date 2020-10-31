@@ -263,6 +263,7 @@ __host__ void ScalableTSDFVolumeCudaKernelCaller::GetVisibleSubvolumesCount(
     const dim3 blocks(DIV_CEILING(volume.active_subvolume_entry_array_.size(),
                                   THREAD_1D_UNIT));
     const dim3 threads(THREAD_1D_UNIT);
+    utility::LogInfo("blocks: {}, threads: {}", volume.active_subvolume_entry_array_.size(), THREAD_1D_UNIT);
     GetVisibleSubvolumesCountKernel<<<blocks, threads>>>(
             *volume.device_, total_visible, frame_id, frame_threshold);
     CheckCuda(cudaDeviceSynchronize());

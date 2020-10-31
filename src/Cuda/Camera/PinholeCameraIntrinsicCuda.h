@@ -113,7 +113,7 @@ public:
     __HOSTDEVICE__ bool IsPointInFrustum(const Vector3f &X, size_t level = 0) {
         /* TODO: Derive a RGBDImage Class (using short),
          * holding depth constraints */
-        if (X(2) < 0.1 || X(2) > 3) return false;
+        if (X(2) < 0.1 || X(2) > 7) return false;
         return IsPixelValid(ProjectPoint(X));
     }
 

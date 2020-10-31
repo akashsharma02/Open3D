@@ -65,6 +65,7 @@ public:
             color_files_.emplace_back(path_dataset_ + "/" + color_file);
             depth_files_.emplace_back(path_dataset_ + "/" + depth_file);
         }
+        utility::LogInfo("Color files: {}, Depth files: {}", color_files_.size(), depth_files_.size());
 
         return true;
     }

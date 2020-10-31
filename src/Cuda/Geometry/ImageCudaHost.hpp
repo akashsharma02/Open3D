@@ -87,8 +87,8 @@ bool ImageCuda<Scalar, Channel>::Create(int width, int height) {
     if (device_ != nullptr) {
         if (width_ != width || height_ != height) {
             utility::LogError(
-                    "[ImageCuda] Incompatible image size, "
-                    "@Create aborted.\n");
+                    "[ImageCuda] Incompatible image size, ({}, {}), ({}, {})"
+                    "@Create aborted.\n", width_, height_, width, height);
             return false;
         }
         return true;
@@ -191,7 +191,7 @@ void ImageCuda<Scalar, Channel>::Upload(geometry::Image &image) {
 
     bool success = Create(image.width_, image.height_);
     if (!success) return;
-
+    utility::LogInfo("{}, {}, {}, {}, {}, {}", image.bytes_per_channel_, image.num_of_channels_, pitch_, image.BytesPerLine(), width_, height_);
     CheckCuda(cudaMemcpy2D(device_->data_, (size_t)pitch_, image.data_.data(),
                            (size_t)image.BytesPerLine(),
                            sizeof(VectorCuda<Scalar, Channel>) * image.width_,

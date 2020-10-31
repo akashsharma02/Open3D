@@ -386,7 +386,7 @@ std::tuple<bool, Eigen::Matrix4d, float> RGBDOdometryCuda<N>::DoSingleIteration(
     Eigen::Vector6d Jtr;
     float loss, inliers;
     ExtractResults(results, JtJ, Jtr, loss, inliers);
-    utility::LogInfo(
+    utility::LogDebug(
             "> Level {}, iter {}: loss = {}, avg loss = {}, "
             "inliers = {}",
             level, iter, loss, loss / inliers, inliers);

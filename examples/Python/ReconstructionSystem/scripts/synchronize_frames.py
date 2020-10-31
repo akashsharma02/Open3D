@@ -30,12 +30,13 @@ def run_synchronization(args):
         'color': [None] * len(color_files)
     }
     for i, name in enumerate(depth_files):
+        print(os.path.basename(depth_files[i]).replace('-', '.').split('.')[0])
         depth_timestamp = int(
-            os.path.basename(depth_files[i]).replace('-', '.').split('.')[1])
+            os.path.basename(depth_files[i]).replace('-', '.').split('.')[0])
         timestamps['depth'][i] = depth_timestamp
     for i, name in enumerate(color_files):
         color_timestamp = int(
-            os.path.basename(color_files[i]).replace('-', '.').split('.')[1])
+            os.path.basename(color_files[i]).replace('-', '.').split('.')[0])
         timestamps['color'][i] = color_timestamp
 
     # associations' index is the color frame, and the value at
@@ -72,7 +73,7 @@ def run_synchronization(args):
             print(temp_name)
             print(new_name)
         if not exists(temp_name):
-            assert (i + 1 == len(color_files))
+            # assert (i + 1 == len(color_files))
             os.remove(color_files[-1])
         else:
             os.rename(temp_name, new_name)

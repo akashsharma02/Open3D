@@ -45,13 +45,17 @@ bool WriteScalableTSDFVolumeToBIN(
         return false;
     }
 
-    float voxel_length, sdf_trunc;
+    float voxel_length, sdf_trunc, max_depth;
     if (fwrite(&volume.voxel_length_, sizeof(float), 1, fid) < 1) {
         utility::LogWarning("Write BIN failed: unable to write voxel length\n");
         return false;
     }
     if (fwrite(&volume.sdf_trunc_, sizeof(float), 1, fid) < 1) {
         utility::LogWarning("Write BIN failed: unable to write sdf_trunc\n");
+        return false;
+    }
+    if (fwrite(&volume.max_depth_, sizeof(float), 1, fid) < 1) {
+        utility::LogWarning("Write BIN failed: unable to write max_depth\n");
         return false;
     }
 
@@ -155,12 +159,16 @@ cuda::ScalableTSDFVolumeCuda ReadScalableTSDFVolumeFromBIN(
         throw std::runtime_error("ScalableTSDFVolume Read from bin error");
     }
 
-    float voxel_length, sdf_trunc;
+    float voxel_length, sdf_trunc, max_depth;
     if (fread(&voxel_length, sizeof(float), 1, fid) < 1) {
         utility::LogWarning("Read BIN failed: unable to read voxel length\n");
         throw std::runtime_error("ScalableTSDFVolume Read from bin error");
     }
     if (fread(&sdf_trunc, sizeof(float), 1, fid) < 1) {
+        utility::LogWarning("Read BIN failed: unable to read sdf_trunc\n");
+        throw std::runtime_error("ScalableTSDFVolume Read from bin error");
+    }
+    if (fread(&max_depth, sizeof(float), 1, fid) < 1) {
         utility::LogWarning("Read BIN failed: unable to read sdf_trunc\n");
         throw std::runtime_error("ScalableTSDFVolume Read from bin error");
     }
@@ -175,7 +183,7 @@ cuda::ScalableTSDFVolumeCuda ReadScalableTSDFVolumeFromBIN(
     transform_volume_to_world.FromEigen(transform);
 
     auto volume = cuda::ScalableTSDFVolumeCuda(
-            volume_size, voxel_length, sdf_trunc, transform_volume_to_world,
+            volume_size, voxel_length, sdf_trunc, max_depth, transform_volume_to_world,
             bucket_count, value_capacity);
 
     int N = volume.N_;

@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     cuda::TransformCuda trans = cuda::TransformCuda::Identity();
     cuda::ScalableTSDFVolumeCuda tsdf_volume(
             16, (float)config.tsdf_cubic_size_ / 512,
-            (float)config.tsdf_truncation_, trans, 40000, 60000);
+            (float)config.tsdf_truncation_, config.max_depth_, trans, 40000, 60000);
     cuda::RGBDImageCuda rgbd((float)config.max_depth_,
                              (float)config.depth_factor_);
 

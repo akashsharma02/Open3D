@@ -24,13 +24,13 @@ void IntegrateForMultiResSubvolume(int fragment_id, DatasetConfig &config) {
     cuda::TransformCuda trans = cuda::TransformCuda::Identity();
 
     cuda::ScalableTSDFVolumeCuda tsdf_volume(
-            8, voxel_length, (float)config.tsdf_truncation_, trans),
+            8, voxel_length, (float)config.tsdf_truncation_, (float)config.max_depth_, trans),
             tsdf_volume_2(8, voxel_length * 2,
-                          (float)config.tsdf_truncation_ * 2, trans,
+                          (float)config.tsdf_truncation_ * 2, (float)config.max_depth_, trans,
                           tsdf_volume.bucket_count_,
                           tsdf_volume.value_capacity_ / 2),
             tsdf_volume_4(8, voxel_length * 4,
-                          (float)config.tsdf_truncation_ * 4, trans,
+                          (float)config.tsdf_truncation_ * 4, (float)config.max_depth_, trans,
                           tsdf_volume.bucket_count_,
                           tsdf_volume.value_capacity_ / 4);
 
@@ -91,7 +91,7 @@ void IntegrateForOriginResolution(int fragment_id, DatasetConfig &config) {
     cuda::TransformCuda trans = cuda::TransformCuda::Identity();
 
     cuda::ScalableTSDFVolumeCuda tsdf_volume(
-            8, voxel_length, (float)config.tsdf_truncation_, trans);
+            8, voxel_length, (float)config.tsdf_truncation_, (float)config.max_depth_, trans);
 
     cuda::RGBDImageCuda rgbd((float)config.max_depth_,
                              (float)config.depth_factor_);
@@ -146,7 +146,7 @@ void IntegrateForCoarseSubvolume(int fragment_id,
 
     int factor = 1 << (scale - 1);
     cuda::ScalableTSDFVolumeCuda tsdf_volume(
-            8, voxel_length * factor, (float)config.tsdf_truncation_ * factor,
+            8, voxel_length * factor, (float)config.tsdf_truncation_ * factor, (float)config.max_depth_,
             trans);
 
     cuda::RGBDImageCuda rgbd((float)config.max_depth_,
