@@ -634,7 +634,7 @@ __device__ void ScalableTSDFVolumeCudaDevice::TouchSubvolume(
     if(!camera.IsPixelValid(Vector2f(p(0), p(1)))) return;
 
     float d = depth.interp_at(p(0), p(1))(0);
-    if (d < 0.1f || d > 3.5f) return;
+    if (d < 0.1f || d > max_depth_) return;
 
     Vector3f Xw_near =
             transform_camera_to_world *
@@ -643,7 +643,7 @@ __device__ void ScalableTSDFVolumeCudaDevice::TouchSubvolume(
 
     Vector3f Xw_far =
             transform_camera_to_world *
-            camera.InverseProjectPixel(p, fminf(d + sdf_trunc_, 3.5f));
+            camera.InverseProjectPixel(p, fminf(d + sdf_trunc_, max_depth_));
     Vector3i Xsv_far = voxelf_locate_subvolume(world_to_voxelf(Xw_far));
 
     //    Vector3i Xsv_min = Vector3i(min(Xsv_near(0), Xsv_far(0)),
@@ -737,9 +737,7 @@ __device__ void ScalableTSDFVolumeCudaDevice::Integrate(
     if(is_inside >= 1)
         fg_sum = uint16_t(min(fg_sum + 1, 65535));
     else
-    {
         bg_sum = uint16_t(min(bg_sum + 1, 65535));
-    }
 }
 
 __device__ bool ScalableTSDFVolumeCudaDevice::RayCasting(
