@@ -70,6 +70,10 @@ if(CUDA_WITH_OPENCV)
   target_compile_definitions(${OPEN3D_CUDA_MODULE} PUBLIC USE_OPENCV)
 endif()
 
+# target_compile_options(${OPEN3D_CUDA_MODULE} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+#                    -g
+#                    -G
+#                    >)
 add_library(${PROJECT_NAME}::${OPEN3D_CUDA_MODULE} ALIAS ${OPEN3D_CUDA_MODULE})
 
 # Installation

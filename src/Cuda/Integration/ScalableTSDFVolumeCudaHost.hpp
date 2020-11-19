@@ -378,11 +378,11 @@ void ScalableTSDFVolumeCuda::TouchSubvolumes(
         PinholeCameraIntrinsicCuda &camera,
         TransformCuda &transform_camera_to_world,
         int frame_id,
-        ImageCuda<uchar, 1> &mask_image) {
+        ImageCuda<uchar, 1> &bbox_mask) {
     assert(device_ != nullptr);
 
     ScalableTSDFVolumeCudaKernelCaller::TouchSubvolumes(
-            *this, depth, camera, transform_camera_to_world, frame_id, mask_image);
+            *this, depth, camera, transform_camera_to_world, frame_id, bbox_mask);
 }
 
 void ScalableTSDFVolumeCuda::GetSubvolumesInFrustum(
@@ -425,13 +425,13 @@ int ScalableTSDFVolumeCuda::GetTotalAllocatedSubvolumesCount() const {
 
 void ScalableTSDFVolumeCuda::IntegrateSubvolumes(
         RGBDImageCuda &rgbd,
-        ImageCuda<uchar, 1> &mask_image,
+        ImageCuda<uchar, 1> &mask,
         PinholeCameraIntrinsicCuda &camera,
         TransformCuda &transform_camera_to_world) {
     assert(device_ != nullptr);
 
     ScalableTSDFVolumeCudaKernelCaller::IntegrateSubvolumes(
-            *this, rgbd, mask_image, camera, transform_camera_to_world);
+            *this, rgbd, mask, camera, transform_camera_to_world);
 }
 
 void ScalableTSDFVolumeCuda::ResetActiveSubvolumeIndices() {
@@ -446,20 +446,32 @@ void ScalableTSDFVolumeCuda::Integrate(
         PinholeCameraIntrinsicCuda &camera,
         TransformCuda &transform_camera_to_world,
         int frame_id,
-        const ImageCuda<uchar, 1> &r_mask_image) {
+        const ImageCuda<uchar, 1> &r_bbox_mask,
+        const ImageCuda<uchar, 1> &r_mask) {
     assert(device_ != nullptr);
 
     hash_table_.ResetLocks();
-    ImageCuda<uchar, 1> mask_image;
-    if (r_mask_image.width_ <= 0 || r_mask_image.height_ <= 0 ||
-        r_mask_image.device_ == nullptr) {
-        mask_image.Create(rgbd.depth_.width_, rgbd.depth_.height_, 255);
-    } else {
-        mask_image = r_mask_image;
+    ImageCuda<uchar, 1> bbox_mask, mask;
+    if (r_bbox_mask.width_ <= 0 || r_bbox_mask.height_ <= 0 || r_bbox_mask.device_ == nullptr)
+    {
+        bbox_mask.Create(rgbd.depth_.width_, rgbd.depth_.height_, 255);
+    }
+    else
+    {
+        bbox_mask = r_bbox_mask;
+    }
+
+    if (r_mask.width_ <= 0 || r_mask.height_ <= 0 || r_mask.device_ == nullptr)
+    {
+        mask.Create(rgbd.depth_.width_, rgbd.depth_.height_, 255);
+    }
+    else
+    {
+        mask = r_mask;
     }
 
     active_subvolume_entry_array_.set_iterator(0);
-    TouchSubvolumes(rgbd.depth_, camera, transform_camera_to_world, frame_id, mask_image);
+    TouchSubvolumes(rgbd.depth_, camera, transform_camera_to_world, frame_id, bbox_mask);
 
     ResetActiveSubvolumeIndices();
     GetSubvolumesInFrustum(camera, transform_camera_to_world, frame_id);
@@ -467,7 +479,7 @@ void ScalableTSDFVolumeCuda::Integrate(
                       active_subvolume_entry_array_.size());
 
     if(active_subvolume_entry_array_.size() > 0)
-        IntegrateSubvolumes(rgbd, mask_image, camera, transform_camera_to_world);
+        IntegrateSubvolumes(rgbd, mask, camera, transform_camera_to_world);
 }
 
 void ScalableTSDFVolumeCuda::RayCasting(

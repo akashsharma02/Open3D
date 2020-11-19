@@ -222,7 +222,7 @@ public:
     __DEVICE__ void Integrate(const Vector3i &Xlocal,
                               HashEntry<Vector3i> &target_subvolume_entry,
                               RGBDImageCudaDevice &rgbd,
-                              ImageCudaDevice<uchar, 1> &mask_image,
+                              ImageCudaDevice<uchar, 1> &mask,
                               PinholeCameraIntrinsicCuda &camera,
                               TransformCuda &transform_camera_to_world);
     __DEVICE__ bool RayCasting(const Vector2i &p,
@@ -341,13 +341,13 @@ public:
                          PinholeCameraIntrinsicCuda &camera,
                          TransformCuda &transform_camera_to_world,
                          int frame_id,
-                         ImageCuda<uchar, 1> &mask);
+                         ImageCuda<uchar, 1> &bbox_mask);
     void GetSubvolumesInFrustum(PinholeCameraIntrinsicCuda &camera,
                                 TransformCuda &transform_camera_to_world,
                                 int frame_id);
     void GetAllSubvolumes();
     void IntegrateSubvolumes(RGBDImageCuda &rgbd,
-                             ImageCuda<uchar, 1> &mask_image,
+                             ImageCuda<uchar, 1> &mask,
                              PinholeCameraIntrinsicCuda &camera,
                              TransformCuda &transform_camera_to_world);
 
@@ -360,6 +360,7 @@ public:
             PinholeCameraIntrinsicCuda &camera,
             TransformCuda &transform_camera_to_world,
             int frame_id = 0,
+            const ImageCuda<uchar, 1> &bbox_mask = ImageCuda<uchar, 1>(),
             const ImageCuda<uchar, 1> &mask_image = ImageCuda<uchar, 1>());
     void RayCasting(ImageCuda<float, 3> &vertex,
                     ImageCuda<float, 3> &normal,
@@ -381,11 +382,11 @@ public:
                                 PinholeCameraIntrinsicCuda &camera,
                                 TransformCuda &transform_camera_to_world,
                                 int frame_id,
-                                ImageCuda<uchar, 1> &mask);
+                                ImageCuda<uchar, 1> &bbox_mask);
 
     static void IntegrateSubvolumes(ScalableTSDFVolumeCuda &volume,
                                     RGBDImageCuda &rgbd,
-                                    ImageCuda<uchar, 1> &mask_image,
+                                    ImageCuda<uchar, 1> &mask,
                                     PinholeCameraIntrinsicCuda &camera,
                                     TransformCuda &transform_camera_to_world);
 
@@ -431,12 +432,12 @@ void TouchSubvolumesKernel(ScalableTSDFVolumeCudaDevice device,
                            PinholeCameraIntrinsicCuda camera,
                            TransformCuda transform_camera_to_world,
                            int frame_id,
-                           ImageCudaDevice<uchar, 1> mask);
+                           ImageCudaDevice<uchar, 1> bbox_mask);
 
 __GLOBAL__
 void IntegrateSubvolumesKernel(ScalableTSDFVolumeCudaDevice device,
                                RGBDImageCudaDevice depth,
-                               ImageCudaDevice<uchar, 1> mask_image,
+                               ImageCudaDevice<uchar, 1> mask,
                                PinholeCameraIntrinsicCuda camera,
                                TransformCuda transform_camera_to_world);
 

@@ -646,20 +646,25 @@ __device__ void ScalableTSDFVolumeCudaDevice::TouchSubvolume(
             camera.InverseProjectPixel(p, fminf(d + sdf_trunc_, max_depth_));
     Vector3i Xsv_far = voxelf_locate_subvolume(world_to_voxelf(Xw_far));
 
-    //    Vector3i Xsv_min = Vector3i(min(Xsv_near(0), Xsv_far(0)),
-    //                                min(Xsv_near(1), Xsv_far(1)),
-    //                                min(Xsv_near(2), Xsv_far(2)));
-    //    Vector3i Xsv_max = Vector3i(max(Xsv_near(0), Xsv_far(0)),
-    //                                max(Xsv_near(1), Xsv_far(1)),
-    //                                max(Xsv_near(2), Xsv_far(2)));
-    //
-    //    for (int x = Xsv_min(0); x <= Xsv_max(0); ++x) {
-    //        for (int y = Xsv_min(1); y <= Xsv_max(1); ++y) {
-    //            for (int z = Xsv_min(2); z <= Xsv_max(2); ++z) {
-    //                hash_table_.New(Vector3i(x, y, z));
-    //            }
-    //        }
-    //    }
+    /* Vector3i Xsv_min = Vector3i(min(Xsv_near(0), Xsv_far(0)), */
+    /*                             min(Xsv_near(1), Xsv_far(1)), */
+    /*                             min(Xsv_near(2), Xsv_far(2))); */
+    /* Vector3i Xsv_max = Vector3i(max(Xsv_near(0), Xsv_far(0)), */
+    /*                             max(Xsv_near(1), Xsv_far(1)), */
+    /*                             max(Xsv_near(2), Xsv_far(2))); */
+
+    /* for (int x = Xsv_min(0); x <= Xsv_max(0); ++x) { */
+    /*     for (int y = Xsv_min(1); y <= Xsv_max(1); ++y) { */
+    /*         for (int z = Xsv_min(2); z <= Xsv_max(2); ++z) { */
+    /*             int internal_addr = hash_table_.New(Vector3i(x, y, z)); */
+    /*             if(internal_addr >= 0) */
+    /*             { */
+    /*                 UniformTSDFVolumeCudaDevice *subvolume = hash_table_.GetValuePtrByInternalAddr(internal_addr); */
+    /*                 subvolume->last_visible_index_ = frame_id; */
+    /*             } */
+    /*         } */
+    /*     } */
+    /* } */
 
     /** 3D line from Xsv_near to Xsv_far
      * https://en.wikipedia.org/wiki/Digital_differential_analyzer_(graphics_algorithm)
@@ -688,7 +693,7 @@ __device__ void ScalableTSDFVolumeCudaDevice::Integrate(
         const Vector3i &Xlocal,
         HashEntry<Vector3i> &entry,
         RGBDImageCudaDevice &rgbd,
-        ImageCudaDevice<uchar, 1> &mask_image,
+        ImageCudaDevice<uchar, 1> &mask,
         PinholeCameraIntrinsicCuda &camera,
         TransformCuda &transform_camera_to_world) {
     /** Projective data association - additional local to global transform **/
@@ -733,7 +738,7 @@ __device__ void ScalableTSDFVolumeCudaDevice::Integrate(
     //! Uniform prior for all voxels
     /** Foreground-Background probability **/
     //! TODO(Akash): Should we use interpolated value here?
-    uchar is_inside = mask_image.at(int(p(0)), int(p(1)))(0);
+    uchar is_inside = mask.at(int(p(0)), int(p(1)))(0);
     if(is_inside >= 1)
         fg_sum = uint16_t(min(fg_sum + 1, 65535));
     else
